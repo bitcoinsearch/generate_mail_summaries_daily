@@ -51,5 +51,5 @@ jobs:
         git config user.name "urvishp80"
         git config user.email "urvishp80@gmail.com"
         git add static/
-        git commit -m "Update generated files [skip ci]"
+        git commit -m "Update generated files"
         git push origin main
