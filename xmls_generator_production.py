@@ -492,15 +492,12 @@ if __name__ == "__main__":
     dev_urls = ["https://lists.linuxfoundation.org/pipermail/bitcoin-dev/",
                 "https://lists.linuxfoundation.org/pipermail/lightning-dev/"]
 
-    # current_date_str = "2021-08-21"
-    # current_date_str = "2021-09-30"
     current_date_str = None
     if not current_date_str:
         current_date_str = datetime.now().strftime("%Y-%m-%d")
 
     for dev_url in dev_urls:
         data_list = elastic_search.extract_data_from_es(ES_INDEX, dev_url, current_date_str)
-        print(data_list)
 
         delay = 50
 
@@ -509,5 +506,5 @@ if __name__ == "__main__":
                 gen.start(data_list, dev_url)
                 break
             except Exception as ex:
-                print(ex)
+                logger.info(ex)
                 time.sleep(delay)
