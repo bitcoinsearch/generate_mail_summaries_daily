@@ -176,7 +176,7 @@ class GenerateXML:
 
     def check_size_body(self, body):
         tokens = TOKENIZER.encode(body)
-        body_length_limit = 3900
+        body_length_limit = 3000
 
         if len(tokens) <= body_length_limit:
             return [body]  # If body tokens count is below the limit, return it as is
@@ -492,7 +492,7 @@ if __name__ == "__main__":
     dev_urls = ["https://lists.linuxfoundation.org/pipermail/bitcoin-dev/",
                 "https://lists.linuxfoundation.org/pipermail/lightning-dev/"]
 
-    current_date_str = "2023-02-02"
+    current_date_str = "2017-02-02"
     if not current_date_str:
         current_date_str = datetime.now().strftime("%Y-%m-%d")
 
