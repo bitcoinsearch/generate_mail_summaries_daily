@@ -492,7 +492,7 @@ if __name__ == "__main__":
     dev_urls = ["https://lists.linuxfoundation.org/pipermail/bitcoin-dev/",
                 "https://lists.linuxfoundation.org/pipermail/lightning-dev/"]
 
-    current_date_str = None
+    current_date_str = "2023-02-02"
     if not current_date_str:
         current_date_str = datetime.now().strftime("%Y-%m-%d")
 
