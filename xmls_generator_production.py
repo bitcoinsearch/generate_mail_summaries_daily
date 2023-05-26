@@ -383,7 +383,7 @@ class GenerateXML:
         if len(dict_data) > 0:
             emails_df = self.generate_new_emails_df(dict_data, url)
             if len(emails_df) > 0:
-                emails_df['created_at_org'] = emails_df['created_at']
+                emails_df['created_at_org'] = emails_df['created_at'].astype(str)
 
                 def generate_local_xml(cols, combine_flag, url):
                     month_name = self.month_dict[int(cols['created_at'].month)]
