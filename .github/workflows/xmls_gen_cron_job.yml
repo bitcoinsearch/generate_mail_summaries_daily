@@ -43,7 +43,7 @@ jobs:
         path: second-repo
 
     - name: Copy Static Folder to Second Repository
-      run: cp -R static/ second-repo/static/
+      run: cp -R static/ second-repo/
 
     - name: Push Static Folder to Second Repository
       run: |
