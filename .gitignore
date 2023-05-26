@@ -123,6 +123,7 @@ celerybeat.pid
 
 # Environments
 exp.py
+exp_summary
 .env
 .venv
 env/
