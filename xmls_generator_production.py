@@ -4,6 +4,7 @@ from feedgen.feed import FeedGenerator
 from tqdm import tqdm
 from elasticsearch import Elasticsearch
 import time
+import traceback
 import platform
 import openai
 import shutil
@@ -17,6 +18,7 @@ import logging
 from dotenv import load_dotenv
 import sys
 import warnings
+
 warnings.filterwarnings("ignore")
 load_dotenv()
 
@@ -43,6 +45,7 @@ def setup_logger(out_file=None, stderr=True, stderr_level=logging.INFO, file_lev
     LOGGER.info("logger set up")
     return LOGGER
 
+
 logger = setup_logger()
 
 TOKENIZER = tiktoken.get_encoding("cl100k_base")
@@ -54,7 +57,7 @@ CHATGPT = True
 COMPLETION_MODEL = "text-davinci-003"  # "text-ada-001",
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 
-ES_CLOUD_ID= os.getenv("ES_CLOUD_ID")
+ES_CLOUD_ID = os.getenv("ES_CLOUD_ID")
 ES_USERNAME = os.getenv("ES_USERNAME")
 ES_PASSWORD = os.getenv("ES_PASSWORD")
 ES_INDEX = os.getenv("ES_INDEX")
@@ -110,7 +113,7 @@ class ElasticSearchClient:
             http_auth=(self._es_username, self._es_password),
         )
 
-    def extract_data_from_es(self, es_index, url, current_date_str):
+    def extract_data_from_es(self, es_index, url, start_date_str, current_date_str):
         output_list = []
         start_time = time.time()
 
@@ -128,7 +131,7 @@ class ElasticSearchClient:
                             {
                                 "range": {
                                     "created_at": {
-                                        "gte": f"{current_date_str}T00:00:00.000Z",
+                                        "gte": f"{start_date_str}T00:00:00.000Z",
                                         "lte": f"{current_date_str}T23:59:59.999Z"
                                     }
                                 }
@@ -174,14 +177,38 @@ class GenerateXML:
             7: "July", 8: "Aug", 9: "Sept", 10: "Oct", 11: "Nov", 12: "Dec"
         }
 
+    def split_prompt_into_chunks(self, prompt, chunk_size):
+        tokens = TOKENIZER.encode(prompt)
+        chunks = []
+
+        while len(tokens) > 0:
+            current_chunk = TOKENIZER.decode(tokens[:chunk_size]).strip()
+
+            if current_chunk:
+                chunks.append(current_chunk)
+
+            tokens = tokens[chunk_size:]
+
+        return chunks
+
     def get_summary_chunks(self, body, tokens_per_sub_body):
         chunks = self.split_prompt_into_chunks(body, tokens_per_sub_body)
         summaries = []
 
+        print(f"Total chunks: {len(chunks)}")
+
         for chunk in chunks:
-            time.sleep(0.1)
-            summary = generate_chatgpt_summary(chunk)
-            summaries.append(summary)
+            count = 0
+            while True:
+                try:
+                    time.sleep(2)
+                    summary = generate_chatgpt_summary(chunk)
+                    summaries.append(summary)
+                    break
+                except Exception as ex:
+                    count += 1
+                    if count > 5:
+                        sys.exit(f"Chunk summary ran into error: {traceback.format_exc()}")
 
         return summaries
 
@@ -190,23 +217,36 @@ class GenerateXML:
 
         summary_length = sum([len(TOKENIZER.encode(s)) for s in summaries])
 
+        print(f"Summary length: {summary_length}")
+        print(f"Max length: {max_length}")
+
         if summary_length > max_length:
             print("entering in recursion")
-            return self.recursive_summary(body, tokens_per_sub_body // 2, max_length)
+            return self.recursive_summary("".join(summaries), tokens_per_sub_body, max_length)
         else:
             return summaries
 
     def gpt_api(self, body):
         body_length_limit = 2800
-        tokens_per_sub_body = 2000
+        tokens_per_sub_body = 2700
         summaries = self.recursive_summary(body, tokens_per_sub_body, body_length_limit)
 
         if len(summaries) > 1:
             print("Consolidate summary generating")
             summary_str = "\n".join(summaries)
-            time.sleep(0.1)
-            consolidated_summaries = consolidate_chatgpt_summary(summary_str)
+            count = 0
+            while True:
+                try:
+                    time.sleep(2)
+                    consolidated_summaries = consolidate_chatgpt_summary(summary_str)
+                    break
+                except Exception as ex:
+                    count += 1
+                    if count > 5:
+                        sys.exit(f"Chunk summary ran into error: {traceback.format_exc()}")
+
             return consolidated_summaries
+
         else:
             print("Individual summary generating")
             return "\n".join(summaries)
@@ -298,21 +338,24 @@ class GenerateXML:
                 df_dict[col].append(dict_data[data]['_source'][col])
         for file in files_list:
             file = file.replace("\\", "/")
-            tree = ET.parse(file)
-            root = tree.getroot()
-            file_title = root.find('atom:entry/atom:title', namespace).text
+            if os.path.exists(file):
+                tree = ET.parse(file)
+                root = tree.getroot()
+                file_title = root.find('atom:entry/atom:title', namespace).text
 
-            if title == file_title:
-                self.append_columns(df_dict, file, title, namespace)
+                if title == file_title:
+                    self.append_columns(df_dict, file, title, namespace)
 
-                if combined_filename in file:
-                    tree = ET.parse(file)
-                    root = tree.getroot()
-                    summary = root.find('atom:entry/atom:summary', namespace).text
-                    df_dict["body"].append(summary)
-                else:
-                    summary = root.find('atom:entry/atom:summary', namespace).text
-                    df_dict["body"].append(summary)
+                    if combined_filename in file:
+                        tree = ET.parse(file)
+                        root = tree.getroot()
+                        summary = root.find('atom:entry/atom:summary', namespace).text
+                        df_dict["body"].append(summary)
+                    else:
+                        summary = root.find('atom:entry/atom:summary', namespace).text
+                        df_dict["body"].append(summary)
+            else:
+                logger.info(f"File not present:- {file}")
 
     def file_present_df(self, files_list, namespace, combined_filename, title, xmls_list, df_dict):
         combined_file_fullpath = None
@@ -350,10 +393,12 @@ class GenerateXML:
                        'url', 'authors']
         namespace = {'atom': 'http://www.w3.org/2005/Atom'}
 
+        current_directory = os.getcwd()
+
         if "lightning-dev" in dev_url:
-            files_list = glob.glob("./static/lightning-dev/**/*.xml", recursive=True)
+            files_list = glob.glob(os.path.join(current_directory, "static", "lightning-dev","**/*.xml"), recursive=True)
         else:
-            files_list = glob.glob("./static/bitcoin-dev/**/*.xml", recursive=True)
+            files_list = glob.glob(os.path.join(current_directory, "static", "bitcoin-dev", "**/*.xml"), recursive=True)
 
         df_dict = {}
         for col in columns:
@@ -449,7 +494,7 @@ class GenerateXML:
                         title_df.apply(lambda x: f"{x['authors'][0]} {x['created_at']}", axis=1))
 
                     month_year_group = \
-                    title_df.groupby([title_df['created_at'].dt.month, title_df['created_at'].dt.year])
+                        title_df.groupby([title_df['created_at'].dt.month, title_df['created_at'].dt.year])
 
                     flag = False
                     std_file_path = ''
@@ -498,15 +543,24 @@ if __name__ == "__main__":
     if not current_date_str:
         current_date_str = datetime.now().strftime("%Y-%m-%d")
 
+    start_date = datetime.now() - timedelta(days=30)
+    start_date_str = start_date.strftime("%Y-%m-%d")
+    print(f"start_data: {start_date_str}")
+    print(f"current_date_str: {current_date_str}")
+
     for dev_url in dev_urls:
-        data_list = elastic_search.extract_data_from_es(ES_INDEX, dev_url, current_date_str)
+        data_list = elastic_search.extract_data_from_es(ES_INDEX, dev_url, start_date_str, current_date_str)
+        logger.info(f"Total threads received: {len(data_list)}")
 
-        delay = 50
-
+        delay = 1
+        count = 0
         while True:
             try:
                 gen.start(data_list, dev_url)
                 break
             except Exception as ex:
-                logger.info(ex)
+                logger.error(ex)
                 time.sleep(delay)
+                count += 1
+                if count > 5:
+                    sys.exit(ex)
