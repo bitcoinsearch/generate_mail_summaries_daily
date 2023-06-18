@@ -301,7 +301,7 @@ class GenerateXML:
         df_dict["_score"].append(0)
 
         df_dict["title"].append(title)
-        formatted_file_name = file.split("./static")[1]
+        formatted_file_name = file.split("/static")[1]
         logger.info(formatted_file_name)
 
         tree = ET.parse(file)
@@ -415,10 +415,12 @@ class GenerateXML:
             combined_filename = f"combined_{xml_name}.xml"
 
             if not any(file_name in item for item in files_list):
+                logger.info(f"{file_name} is not present")
                 self.file_not_present_df(columns, source_cols, df_dict, files_list, dict_data, data,
                                          title, combined_filename, namespace)
 
             else:
+                logger.info(f"{file_name} already exist")
                 self.file_present_df(files_list, namespace, combined_filename, title, xmls_list, df_dict)
 
         emails_df = pd.DataFrame(df_dict)
@@ -545,15 +547,17 @@ if __name__ == "__main__":
 
     start_date = datetime.now() - timedelta(days=30)
     start_date_str = start_date.strftime("%Y-%m-%d")
-    print(f"start_data: {start_date_str}")
-    print(f"current_date_str: {current_date_str}")
+    logger.info(f"start_data: {start_date_str}")
+    logger.info(f"current_date_str: {current_date_str}")
 
     for dev_url in dev_urls:
         data_list = elastic_search.extract_data_from_es(ES_INDEX, dev_url, start_date_str, current_date_str)
-        logger.info(f"Total threads received: {len(data_list)}")
+        dev_name = dev_url.split("/")[-2]
+        logger.info(f"Total threads received for {dev_name}: {len(data_list)}")
 
         delay = 1
         count = 0
+
         while True:
             try:
                 gen.start(data_list, dev_url)

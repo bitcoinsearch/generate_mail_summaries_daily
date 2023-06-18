@@ -1,0 +1,23 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+  <id>2</id>
+  <title>Combined summary - Proposal: Bundled payments</title>
+  <updated>2023-06-18T13:13:53.694700+00:00</updated>
+  <author>
+    <name>Thomas Voegtlin 2023-06-15 08:22:39+00:00</name>
+  </author>
+  <author>
+    <name>Bastien TEINTURIER 2023-06-15 09:01:32+00:00</name>
+  </author>
+  <link href="lightning-dev/June_2023/003981_Proposal-Bundled-payments.xml" rel="alternate"/>
+  <link href="lightning-dev/June_2023/003982_Proposal-Bundled-payments.xml" rel="alternate"/>
+  <generator uri="https://lkiesow.github.io/python-feedgen" version="0.9.0">python-feedgen</generator>
+  <entry>
+    <id>2</id>
+    <title>Combined summary - Proposal: Bundled payments</title>
+    <updated>2023-06-18T13:13:53.694700+00:00</updated>
+    <link href="https://lists.linuxfoundation.org/pipermail/lightning-dev/2023-June/003981.html" rel="alternate"/>
+    <summary>Thomas Voegtlin has proposed an extension to BOLT-11, which would allow the bundling of prepayment and main payment in the same invoice. This proposal aims to benefit lightning service providers who require a prepayment of mining fees for non-custodian exchanges, such as submarine swaps or JIT channels.To solve this issue, Thomas suggests that the BOLT-11 invoice feature should describe the prepayment of a fee using a different preimage. Two extra fields will be defined: prepayment_amount and prepayment_hash. If the sender does not support the feature, it ignores the new fields. The decision to make this feature required or optional remains with the service provider.Matt Corallo expressed his concern that extending Bolt 11 may not be feasible due to already existing technical implementations. He suggests that Bolt 12 may be more appropriate since it requires new sender code anyway. Bastien also pointed out that Thomas's proposal requires senders to be aware that the payment will lead to a channel creation (or a splice) on the receiver end, and all existing software used by senders would need to be updated. He suggests that Bolt 12 is actively being worked on by all implementations and that this new feature should be included in Bolt 12 rather than Bolt 11.The use case for the proposal is for services that require prepayment of a mining fee for a non-custodian exchange to take place, such as submarine swaps and JIT channels. Current competitors who do not require a dedicated wallet, such as the Boltz exchange, cannot ask for prepayment, making them vulnerable to DoS attacks. Additionally, providers who want to protect themselves against mining fee attacks need to ask for the preimage of the main payment before they open the channel, which makes their service custodian.To level the field in terms of competition between lightning service providers, it would be beneficial to bundle the prepayment and the main payment in the same BOLT-11 invoice. This proposal would make it possible for ACINQ to make its pay-to-open service fully non-custodian and should be implemented in BOLT-11.However, Matt believes that getting any kind of new interoperable change into BOLT-11 might be difficult since amount-less BOLT-11 invoices are already not broadly supported. Moreover, if we are working towards specifying some "standard" way of doing swaps, then it should be built on OMs so that it can be done more privately.</summary>
+    <published>2023-06-15T08:22:39+00:00</published>
+  </entry>
+</feed>
