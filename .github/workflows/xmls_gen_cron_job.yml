@@ -38,7 +38,7 @@ jobs:
       uses: actions/checkout@v2
       id: second_repo
       with:
-        repository: urvishp80/mailing-list-summaries
+        repository: bitcoinsearch/mailing-list-summaries
         token: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
         path: second-repo
 
