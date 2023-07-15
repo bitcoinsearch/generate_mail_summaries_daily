@@ -1,55 +1,55 @@
-name: Daily Python Script Execution
+# name: Daily Python Script Execution
 
-on:
-  schedule:
-    - cron: "0 1 * * *"
-  workflow_dispatch:
-  repository_dispatch:
+# on:
+#   schedule:
+#     - cron: "0 1 * * *"
+#   workflow_dispatch:
+#   repository_dispatch:
 
-jobs:
-  execute_and_commit:
-    runs-on: ubuntu-latest
+# jobs:
+#   execute_and_commit:
+#     runs-on: ubuntu-latest
 
-    env:
-      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-      ES_CLOUD_ID: ${{ secrets.ES_CLOUD_ID }}
-      ES_USERNAME: ${{ secrets.ES_USERNAME }}
-      ES_PASSWORD: ${{ secrets.ES_PASSWORD }}
-      ES_INDEX: ${{ secrets.ES_INDEX }}
+#     env:
+#       OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+#       ES_CLOUD_ID: ${{ secrets.ES_CLOUD_ID }}
+#       ES_USERNAME: ${{ secrets.ES_USERNAME }}
+#       ES_PASSWORD: ${{ secrets.ES_PASSWORD }}
+#       ES_INDEX: ${{ secrets.ES_INDEX }}
 
-    steps:
-    - name: Check out repository
-      uses: actions/checkout@v2
-      with:
-        fetch-depth: 0
+#     steps:
+#     - name: Check out repository
+#       uses: actions/checkout@v2
+#       with:
+#         fetch-depth: 0
 
-    - name: Set up Python
-      uses: actions/setup-python@v2
-      with:
-        python-version: 3.x
+#     - name: Set up Python
+#       uses: actions/setup-python@v2
+#       with:
+#         python-version: 3.x
 
-    - name: Install dependencies
-      run: pip install -r requirements.txt
+#     - name: Install dependencies
+#       run: pip install -r requirements.txt
 
-    - name: Execute Python script
-      run: python xmls_generator_production.py
+#     - name: Execute Python script
+#       run: python xmls_generator_production.py
 
-    - name: Checkout the Second Repository
-      uses: actions/checkout@v2
-      id: second_repo
-      with:
-        repository: bitcoinsearch/mailing-list-summaries
-        token: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
-        path: second-repo
+#     - name: Checkout the Second Repository
+#       uses: actions/checkout@v2
+#       id: second_repo
+#       with:
+#         repository: bitcoinsearch/mailing-list-summaries
+#         token: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
+#         path: second-repo
 
-    - name: Copy Static Folder to Second Repository
-      run: cp -R static/ second-repo/
+#     - name: Copy Static Folder to Second Repository
+#       run: cp -R static/ second-repo/
 
-    - name: Push Static Folder to Second Repository
-      run: |
-        cd second-repo
-        git config user.name "urvishp80"
-        git config user.email "urvishp80@gmail.com"
-        git add static/
-        git commit -m "Update generated files"
-        git push origin main
+#     - name: Push Static Folder to Second Repository
+#       run: |
+#         cd second-repo
+#         git config user.name "urvishp80"
+#         git config user.email "urvishp80@gmail.com"
+#         git add static/
+#         git commit -m "Update generated files"
+#         git push origin main
